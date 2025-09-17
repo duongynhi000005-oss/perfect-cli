@@ -9,9 +9,9 @@ import {
 } from "./get-command-from-path"
 import { figureOutCommandArgs } from "./figure-out-command-args"
 import { stringifyCommandWithOptions } from "./stringify-command-with-options"
-import { stringifyOptions } from "./stringify-options"
 import { doesProgramHaveAllRequiredArgs } from "./does-program-have-all-required-args"
 import { PerfectCliOptions } from "./perfect-cli-options"
+import { findOptionByKey, getOptionFlagName } from "./utils"
 
 export const perfectCli = async (
   program: Command,
@@ -56,7 +56,7 @@ export const perfectCli = async (
   const isHelpMode = help || h
 
   if (isHelpMode) {
-    ;(subcommand ?? program).help()
+    ; (subcommand ?? program).help()
     return
   }
 
@@ -108,12 +108,23 @@ export const perfectCli = async (
 
   const strictCommandPath = getStrictCommandPath(program, commandPath)
 
+  const optionArgs = Object.entries(options)
+    .filter((opt) => opt[0] !== "_")
+    .flatMap(([optKey, optVal]) => {
+      const option = findOptionByKey(command, optKey)
+      const flagName = getOptionFlagName(command, optKey)
+
+      if (option?.isBoolean?.()) {
+        return optVal ? [`--${flagName}`] : []
+      }
+
+      return [`--${flagName}`, optVal]
+    }) as string[]
+
   await program.parseAsync([
     ...process.argv.slice(0, 2),
     ...strictCommandPath.concat(options._ ?? []),
-    ...(Object.entries(options)
-      .filter((opt) => opt[0] !== "_")
-      .flatMap(([optKey, optVal]) => [`--${optKey}`, optVal]) as string[]),
+    ...optionArgs,
   ])
 }
 

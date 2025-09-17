@@ -56,7 +56,7 @@ export const figureOutCommandArgs = async (
   console.log(
     `> ${[program.name(), ...commandPath]
       .filter(Boolean)
-      .join(" ")} ${stringifyOptions(options)}`
+      .join(" ")} ${stringifyOptions(options, command)}`
   )
 
   const hasRequiredOptions = command.options
